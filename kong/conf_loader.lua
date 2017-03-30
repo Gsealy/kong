@@ -62,11 +62,13 @@ local CONF_INFERENCES = {
   nginx_worker_processes = {typ = "string"},
   upstream_keepalive = {typ = "number"},
 
-  database = {enum = {"postgres", "cassandra"}},
+  database = {enum = {"postgres", "cassandra","mysql"}},
   pg_port = {typ = "number"},
   pg_password = {typ = "string"},
   pg_ssl = {typ = "boolean"},
   pg_ssl_verify = {typ = "boolean"},
+
+  mysql_port = {typ = "number"},
 
   cassandra_contact_points = {typ = "array"},
   cassandra_port = {typ = "number"},
@@ -106,6 +108,7 @@ local CONF_INFERENCES = {
 -- using the CLI in debug mode (which prints all settings).
 local CONF_SENSITIVE = {
   pg_password = true,
+  mysql_password = true,
   cassandra_password = true,
   cluster_encrypt_key = true
 }

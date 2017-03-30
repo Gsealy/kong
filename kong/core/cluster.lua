@@ -81,6 +81,11 @@ local function autojoin_handler(premature)
   -- If the current member count on this node's cluster is 1, but there are more than 1 active nodes in
   -- the DAO, then try to join them
   local count, err = singletons.dao.nodes:count()
+
+  if type(count)=="string" then
+     count=tonumber(count)
+  end
+
   if err then
     log(ERR, err)
 

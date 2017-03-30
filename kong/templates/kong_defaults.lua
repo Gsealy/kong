@@ -20,7 +20,14 @@ admin_ssl_cert = NONE
 admin_ssl_cert_key = NONE
 upstream_keepalive = 60
 
-database = postgres
+database = mysql
+
+mysql_host = 127.0.0.1
+mysql_port = 3306
+mysql_database = kong
+mysql_user = kong
+mysql_password = kong
+
 pg_host = 127.0.0.1
 pg_port = 5432
 pg_database = kong
