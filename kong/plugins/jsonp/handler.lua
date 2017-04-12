@@ -1,11 +1,6 @@
 local BasePlugin = require "kong.plugins.base_plugin"
 local body_filter = require "kong.plugins.jsonp.body_transformer"
- 
 
-local is_body_transform_set = header_filter.is_body_transform_set
-
-
- 
 local JsonpHandler = BasePlugin:extend()
 
 
