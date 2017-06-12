@@ -11,7 +11,7 @@ return {
         CONSTRAINT acls_consumerid_fk FOREIGN KEY (consumer_id) REFERENCES consumers(id) ON DELETE CASCADE , 
         INDEX acls_group(`group`),
         INDEX acls_consumer_id(consumer_id)
-      ) CHARSET=utf8;
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
     ]],
     down = [[
       DROP TABLE acls;

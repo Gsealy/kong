@@ -155,7 +155,7 @@ return {
         cert varchar(500) ,
         `key` varchar(500) ,
         created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      ) CHARSET=utf8;
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
       CREATE TABLE IF NOT EXISTS ssl_servers_names(
         name varchar(100) PRIMARY KEY,
