@@ -6,7 +6,7 @@ return {
         CREATE TABLE IF NOT EXISTS schema_migrations(
           id varchar(100) PRIMARY KEY,
           migrations varchar(10000)
-        );
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
       ]]
     end,
     down = [[
@@ -24,7 +24,7 @@ return {
         created_at timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX custom_id_idx(custom_id),
         INDEX username_idx(username)
-      );
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
         CREATE TABLE IF NOT EXISTS apis(
         id varchar(50) PRIMARY KEY,
@@ -43,7 +43,7 @@ return {
         upstream_read_timeout integer DEFAULT 60000,
         created_at  timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX apis_name_idx(name)
-      );
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
      CREATE TABLE IF NOT EXISTS plugins(
         id varchar(50),
@@ -59,7 +59,7 @@ return {
         INDEX plugins_name_idx(name),
         INDEX plugins_api_idx(api_id),
         INDEX plugins_consumer_idx(consumer_id)
-      );
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
     ]],
     down = [[
       DROP TABLE consumers;
@@ -76,7 +76,7 @@ return {
         created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (name),
         INDEX nodes_cluster_listening_address_idx(cluster_listening_address)
-      );
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC ;
 
     ]],
     down = [[
@@ -95,7 +95,7 @@ return {
         primary_key_name varchar(100) NOT NULL,
         expire_at timestamp  NOT NULL,
         PRIMARY KEY(primary_key_value, table_name)
-      );
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
       CREATE FUNCTION upsert_ttl(v_primary_key_value varchar(200), v_primary_uuid_value varchar(50), v_primary_key_name varchar(100), v_table_name varchar(100), v_expire_at timestamp)  RETURNS INT
         BEGIN
@@ -128,7 +128,7 @@ return {
         orderlist varchar(1000) NOT NULL,
         created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX upstreams_name_idx(name)
-      );
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
     
       CREATE TABLE IF NOT EXISTS targets(
         id varchar(50) PRIMARY KEY,
@@ -138,7 +138,7 @@ return {
         created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         CONSTRAINT tragets_upstreamid_fk FOREIGN KEY (upstream_id) REFERENCES upstreams(id) ON DELETE CASCADE ,
         INDEX targets_target_idx(target)
-      );
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
       
     ]],
     down = [[
@@ -155,7 +155,7 @@ return {
         cert varchar(500) ,
         `key` varchar(500) ,
         created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      );
+      ) CHARSET=utf8;
 
       CREATE TABLE IF NOT EXISTS ssl_servers_names(
         name varchar(100) PRIMARY KEY,
@@ -163,7 +163,7 @@ return {
         created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         CONSTRAINT serversname_certificates_fk FOREIGN KEY (ssl_certificate_id) REFERENCES ssl_certificates(id) ON DELETE CASCADE 
     
-      );
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
     ]],
     down = [[
       DROP TABLE ssl_certificates;

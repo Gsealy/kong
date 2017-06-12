@@ -15,7 +15,7 @@ return {
         INDEX jwt_secrets_key(`key`),
         INDEX jwt_secrets_secret(secret),
         INDEX jwt_secrets_consumer_id(consumer_id)
-      );
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
     ]],
     down = [[
       DROP TABLE jwt_secrets;

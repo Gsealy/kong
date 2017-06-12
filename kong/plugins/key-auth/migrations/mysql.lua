@@ -11,7 +11,7 @@ return {
         PRIMARY KEY (id),
         INDEX keyauth_key_idx(`key`),
         INDEX keyauth_consumer_idx(consumer_id)
-      );
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
     ]],
     down = [[
       DROP TABLE keyauth_credentials;

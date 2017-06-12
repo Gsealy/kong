@@ -9,7 +9,7 @@ return {
         period_date timestamp  ,
         `value` integer,
         PRIMARY KEY (api_id, identifier, period_date, period)
-      );
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
      CREATE  FUNCTION increment_response_rate_limits(a_id varchar(50), i varchar(200), p varchar(100), p_date timestamp  , v integer) RETURNS INT  
       BEGIN

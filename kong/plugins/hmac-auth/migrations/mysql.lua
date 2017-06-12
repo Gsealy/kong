@@ -12,7 +12,7 @@ return {
          CONSTRAINT hmacauth_consumerid_fk FOREIGN KEY (consumer_id) REFERENCES consumers(id) ON DELETE CASCADE , 
         INDEX hmacauth_credentials_username(username),
         INDEX hmacauth_credentials_consumer_id(consumer_id)
-      );
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
     ]],
     down = [[
       DROP TABLE hmacauth_credentials;

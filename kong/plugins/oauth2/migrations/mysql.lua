@@ -15,7 +15,7 @@ return {
         INDEX oauth2_credentials_consumer_idx(consumer_id),
         INDEX oauth2_credentials_client_idx(client_id),
         INDEX oauth2_credentials_secret_idx(client_secret)
-      );
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
       CREATE TABLE IF NOT EXISTS oauth2_authorization_codes(
         id varchar(50),
@@ -30,7 +30,7 @@ return {
         CONSTRAINT oauth2_authtoken_apiid_fk FOREIGN KEY (api_id) REFERENCES apis(id) ON DELETE CASCADE , 
         INDEX oauth2_autorization_code_idx(code);
         INDEX oauth2_authorization_userid_idx(authenticated_userid);
-      );
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
       CREATE TABLE IF NOT EXISTS oauth2_tokens(
         id varchar(50),
@@ -50,7 +50,7 @@ return {
         INDEX oauth2_token_refresh_idx(refresh_token),
         INDEX oauth2_token_userid_idx(authenticated_userid)
 
-      );
+      )ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
     ]],
     down =  [[
       DROP TABLE oauth2_credentials;
