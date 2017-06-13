@@ -13,9 +13,6 @@ local function checksign(conf)
     ngx.log(ngx.ERR, "[sign] no conf.signname set, aborting plugin execution")
     return false, {status = 500, message= "Invalid plugin configuration"}
   end
-
-
-
   local signname = conf.signname
   local prefix = conf.prefix
   local after = conf.after
@@ -24,7 +21,7 @@ local function checksign(conf)
   local tbl={}
   local tblkey={}
 
-
+  
   local args =nil
   local request_method = ngx.var.request_method
   if "GET" == request_method then
@@ -47,26 +44,25 @@ local function checksign(conf)
     end
   end
 
-   if not sign then
-    return false, {status = 401, message = "No sign key found in headers"
-                                          .." or querystring"}
+  if not sign then
+    return false, {status = 401, message ={code=401,data={message= "No sign key found in headers"
+                                          .." or querystring"}} }
   end
-
   table.sort(tblkey)
-  local  temp=""
-  local  index = 0
-  for _,key in pairs(tblkey) do
-      temp=temp..key..pairsplit..tbl[key]..itemsplit  
-      index=index+1
-  end
-  if index>0 then
-    temp =string.sub(temp,1,string.len(temp)-string.len(itemsplit))
+  local index=0
 
-  temp=prefix..temp..after
+  local  temp=""
+  for  _,key in pairs(tblkey) do
+       index=index+1
+         temp=temp..key..pairsplit..tbl[key]..itemsplit
+  end
+    temp =string.sub(temp,1,string.len(temp)-string.len(itemsplit))
   
+  temp=prefix..temp..after
   local  formatkey = ngx.md5(temp)
+  ngx.log(ngx.ERR,formatkey.."=="..sign)
   if ( string.lower(formatkey) ~= string.lower(sign)) then
-      return false, {status = 403, message = "Invalid sign credentials"}
+      return false, {status = 403, message ={code=403,data={message="Unauthorized"}} }
   end
 
   return true
