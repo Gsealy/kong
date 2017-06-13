@@ -263,7 +263,9 @@ end
 local function deserialize_rows(rows, schema)
   for i, row in ipairs(rows) do
     for col, value in pairs(row) do
-      if type(value) == "string" and schema.fields[col] and
+       if  schema.fields[col].type=="boolean"  then
+          rows[i][col] =  (value==1 and true) or false
+      elseif type(value) == "string" and schema.fields[col] and
         (schema.fields[col].type == "table" or schema.fields[col].type == "array") then
         rows[i][col] = cjson.decode(value)
       end
@@ -411,7 +413,11 @@ function _M:find_all(table_name, tbl, schema)
     end
 
     local query = select_query(self, get_select_fields(schema), schema, table_name, where)
-    return self:query(query, schema)
+    if query~=nil then
+      return self:query(query, schema)
+    else
+      return {}
+    end
   else
     return {}
   end 
@@ -449,7 +455,7 @@ function _M:count(table_name, tbl, schema)
   local query = select_query(self, "COUNT(*) as count", schema, table_name, where)
   local res, err = self:query(query)
   if not res then       return nil, err
-  elseif #res <= 1 then return res[1].count
+  elseif #res <= 1 then return tonumber(res[1].count)
   else                  return nil, "bad rows result" end
 
 
