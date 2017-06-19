@@ -2,6 +2,8 @@ local mysql = require "resty.mysql"
 local Errors = require "kong.dao.errors"
 local utils = require "kong.tools.utils"
 local cjson = require "cjson"
+local Events = require "kong.core.events"
+ 
 
 local get_phase = ngx.get_phase
 local timer_at = ngx.timer.at
@@ -63,6 +65,7 @@ function _M:init_worker()
   if not ok then
     log(ERR, "could not create TTL timer: ", err)
   end
+ 
   return true
 end
 
@@ -76,7 +79,7 @@ local function retrieve_primary_key_type(self, schema, table_name)
 
   if not col_type then
     local query = fmt([[
-      SELECT data_type
+      SELECT data_type,character_maximum_length
       FROM information_schema.columns
       WHERE table_name = '%s'
         and column_name = '%s'
@@ -85,7 +88,12 @@ local function retrieve_primary_key_type(self, schema, table_name)
     local res, err = self:query(query)
     if not res then return nil, err
     elseif #res > 0 then
-      col_type = res[1].data_type
+      local dtype = (res[1].data_type~=nil and res[1].data_type) or res[1].DATA_TYPE
+      if dtype=="varchar" then
+          local fieldLen = (res[1].character_maximum_length~=nil  and res[1].character_maximum_length) or res[1].CHARACTER_MAXIMUM_LENGTH
+          dtype=(fieldLen==50 and "uuid") or "text"
+      end
+      col_type = dtype
       cached_columns_types[table_name] = col_type
     end
   end
@@ -263,8 +271,9 @@ end
 local function deserialize_rows(rows, schema)
   for i, row in ipairs(rows) do
     for col, value in pairs(row) do
-       if  schema.fields[col].type=="boolean"  then
-          rows[i][col] =  (value==1 and true) or false
+      if  schema.fields[col].type=="boolean"  then
+         
+        rows[i][col] =  (value==1 and true) or false
       elseif type(value) == "string" and schema.fields[col] and
         (schema.fields[col].type == "table" or schema.fields[col].type == "array") then
         rows[i][col] = cjson.decode(value)
@@ -274,12 +283,46 @@ local function deserialize_rows(rows, schema)
 end
 
 function _M:query(query, schema)
-  local conn_opts = self:clone_query_options()
+  
+  if ngx.get_phase()=="init" then
+ 
+    local newSql="\""..ngx.escape_uri(query).."\""    
+    newSql=string.gsub(newSql,"`","\\`")
+    local cmd= io.popen("sh ../../plugins/tool/bin/run.sh mysql -h ".. self.query_options.host.." -p "..self.query_options.port.." -u "..self.query_options.user.." -pa "..self.query_options.password.." -d "..self.query_options.database.." -s "..newSql)
+    local result=cmd:read("*all")
+    local res,err = cjson.decode(result)
+    if res == nil and err ~=nil then
+        return nil, parse_error(queryerr)
+    end
+   local queryres=res.data  
+      if schema ~= nil and res ~=nil and res.code==1 then
+         deserialize_rows(queryres, schema)
+      end
 
-  local my, err = mysql:new()
-  if not my then
-        return nil,Errors.db(err)
+      if queryres==nil then
+        queryres={}
+      end
+      return queryres
+
+  else
+     return self:query2(query,schema)
   end
+
+end
+
+
+
+function _M:query2(query, schema)
+  local conn_opts = self:clone_query_options()
+  local my,err
+  
+    my, err = mysql:new()
+    if not my then
+          return nil,Errors.db(err)
+    end
+
+
+
   my:set_timeout(3000) -- 3 sec
   local ok, err = my:connect(conn_opts)
   if not ok then
@@ -292,12 +335,16 @@ function _M:query(query, schema)
   local query_type = type(query)
   if query_type == "table" then
     for sql_key, sql_value in pairs(query) do
-         queryres, queryerr = my:query(sql_value,10)
+        -- log(debug, sql_value)
+       --log(ERR,sql_value)  
+       queryres, queryerr = my:query(sql_value,10)
       if queryres == nil and queryerr ~=nil then
           return nil, parse_error(queryerr)
       end
     end
   else
+      --log(debug, query)
+      --log(ERR,query)
       queryres, queryerr = my:query(query,10)
   end
    
@@ -322,9 +369,12 @@ end
 
 local function deserialize_timestamps(self, row, schema)
   local result = row
-  if result ~=nil then
+ if result ~=nil then
+       
       for k, v in pairs(schema.fields) do
         if v.type == "timestamp" and result[k] then
+        --  log(ERR,result[k])
+        --  log(ERR,k)
           local query = fmt("SELECT   UNIX_TIMESTAMP('%s')*1000 as `%s`;", result[k], k)
           local res, err = self:query(query)
           if not res then return nil, err
@@ -381,7 +431,6 @@ function _M:insert(table_name, schema, model, _, options)
   end
 
   if not res then return nil, err
-
   elseif #res > 0 then
     res, err = deserialize_timestamps(self, res[1], schema)
     if err then return nil, err
@@ -406,18 +455,23 @@ function _M:find(table_name, schema, primary_keys)
 end
 
 function _M:find_all(table_name, tbl, schema)
-  if ngx and ngx.get_phase() ~= "init" then
-    local where
+ 
+   --if ngx and ngx.get_phase() ~= "init" then
+   local where
     if tbl then
       where = get_where(tbl)
     end
 
     local query = select_query(self, get_select_fields(schema), schema, table_name, where)
-    if query~=nil then
-      return self:query(query, schema)
-    else
-      return {}
-    end
+  
+
+    if query ~=nil then
+      local res =self:query(query,schema) 
+      -- return self:query(query, schema)
+      return res
+  --else
+    --   return {}
+   -- end
   else
     return {}
   end 
@@ -440,10 +494,12 @@ function _M:find_page(table_name, tbl, page, page_size, schema)
   local query = select_query(self, get_select_fields(schema), schema, table_name, where, offset, page_size)
   local rows, err = self:query(query, schema)
   if not rows then return nil, err end
-   
-  local next_page = page + 1
-  return rows, nil, (next_page <= total_pages and next_page or nil)
 
+  if rows==nil then
+   rows={}
+  end 
+ local next_page = page + 1
+  return rows, nil, (next_page <= total_pages and next_page or nil)
 end
 
 function _M:count(table_name, tbl, schema)
@@ -457,8 +513,6 @@ function _M:count(table_name, tbl, schema)
   if not res then       return nil, err
   elseif #res <= 1 then return tonumber(res[1].count)
   else                  return nil, "bad rows result" end
-
-
 end
 
 function _M:update(table_name, schema, _, filter_keys, values, nils, full, _, options)
@@ -540,7 +594,7 @@ end
 function _M:current_migrations()
     if ngx and get_phase() ~= "init" then
 
-      -- check if schema_migrations table exists
+    --   check if schema_migrations table exists
  
       local conn_opts =  self.query_options 
       local querysql= fmt( "select table_name as to_regclass from `information_schema`.TABLES where table_schema='%s' and table_name='schema_migrations'",conn_opts.database )
@@ -582,10 +636,10 @@ function _M:record_migration(id, name)
               RETURN 1;
           END;
 
-          SELECT upsert_schema_migrations('%s', %s)]], id, escape_literal(name)))
+          SELECT upsert_schema_migrations('%s', %s)"]], id, escape_literal(name)))
      
       if not res then return nil, err end 
-  end
+ end
 
   return true
 end
