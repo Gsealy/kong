@@ -278,6 +278,9 @@ local function deserialize_rows(rows, schema)
         (schema.fields[col].type == "table" or schema.fields[col].type == "array") then
         rows[i][col] = cjson.decode(value)
       end
+      if  (value~=nil and cjson.encode(value)=="null" ) then
+          rows[i][col]=nil
+        end
     end
   end
 end
@@ -288,7 +291,8 @@ function _M:query(query, schema)
  
     local newSql="\""..ngx.escape_uri(query).."\""    
     newSql=string.gsub(newSql,"`","\\`")
-    local cmd= io.popen("sh ../../plugins/tool/bin/run.sh mysql -h ".. self.query_options.host.." -p "..self.query_options.port.." -u "..self.query_options.user.." -pa "..self.query_options.password.." -d "..self.query_options.database.." -s "..newSql)
+    local cmdtext="sh ../../plugins/tool/bin/run.sh mysql -h ".. self.query_options.host.." -p "..self.query_options.port.." -u "..self.query_options.user.." -pa "..self.query_options.password.." -d "..self.query_options.database.." -s "..newSql
+    local cmd= io.popen(cmdtext)
     local result=cmd:read("*all")
     local res,err = cjson.decode(result)
     if res == nil and err ~=nil then
@@ -305,6 +309,7 @@ function _M:query(query, schema)
       return queryres
 
   else
+     
      return self:query2(query,schema)
   end
 
@@ -335,16 +340,12 @@ function _M:query2(query, schema)
   local query_type = type(query)
   if query_type == "table" then
     for sql_key, sql_value in pairs(query) do
-        -- log(debug, sql_value)
-       --log(ERR,sql_value)  
        queryres, queryerr = my:query(sql_value,10)
       if queryres == nil and queryerr ~=nil then
           return nil, parse_error(queryerr)
       end
     end
   else
-      --log(debug, query)
-      --log(ERR,query)
       queryres, queryerr = my:query(query,10)
   end
    
@@ -455,7 +456,6 @@ function _M:find(table_name, schema, primary_keys)
 end
 
 function _M:find_all(table_name, tbl, schema)
- 
    --if ngx and ngx.get_phase() ~= "init" then
    local where
     if tbl then
@@ -571,12 +571,12 @@ end
 -- @section migrations
 
 function _M:queries(queries)
-   if ngx and get_phase() ~= "init" then
+  -- if ngx and get_phase() ~= "init" then
     if utils.strip(queries) ~= "" then
       local res, err = self:query(queries)
       if not res then return err end
     end
-  end
+ -- end
 end
 
 function _M:drop_table(table_name)
@@ -592,7 +592,7 @@ function _M:truncate_table(table_name)
 end
 
 function _M:current_migrations()
-    if ngx and get_phase() ~= "init" then
+   -- if ngx and get_phase() ~= "init" then
 
     --   check if schema_migrations table exists
  
@@ -610,9 +610,9 @@ function _M:current_migrations()
       else
         return {}
       end
-    else
-      return {}
-    end
+   -- else
+     -- return {}
+    --end
 end
 
 function _M:record_migration(id, name)

@@ -8,7 +8,7 @@ local BodyTokenHandler = BasePlugin:extend()
 
 
 function BodyTokenHandler:new()
-  BodyTokenHandler.super.new(self, "body")
+  BodyTokenHandler.super.new(self, "bodytoken")
 end
 
 local function checktoken(conf)
@@ -61,8 +61,7 @@ local function checktoken(conf)
   if data.code==0 then
      return false, {status = 401, message = data.message}
   end 
-  ngx.log(ngx.ERR,result) 
-  
+
   changebody.execute("body",data.data)
 
   return true

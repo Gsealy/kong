@@ -60,7 +60,6 @@ local function checksign(conf)
   
   temp=prefix..temp..after
   local  formatkey = ngx.md5(temp)
-  ngx.log(ngx.ERR,formatkey.."=="..sign)
   if ( string.lower(formatkey) ~= string.lower(sign)) then
       return false, {status = 403, message ={code=403,data={message="Unauthorized"}} }
   end

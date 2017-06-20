@@ -57,7 +57,6 @@ local function checktoken(conf)
   if data.code==0 then
      return false, {status = 401, message = data.message}
   end 
-  ngx.log(ngx.ERR,result) 
   return true
 end
 
