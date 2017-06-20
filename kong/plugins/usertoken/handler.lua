@@ -1,6 +1,7 @@
 local BasePlugin = require "kong.plugins.base_plugin"
 local responses = require "kong.tools.responses"
 local cjson = require "cjson"
+local pl_path = require "pl.path"
 local UserTokenHandler = BasePlugin:extend()
 
 function UserTokenHandler:new()
@@ -47,8 +48,12 @@ local function checktoken(conf)
     return false, {status = 401, message = "Wrong token version in headers or querystring"}
   end 
 
-  local cmd= io.popen("sh ../tool/bin/run.sh usertoken -pu "..publickey.." -pr "..privatekey.." -v "..version.." -m "..magiccode.." -t "..token)
+  local curpath= pl_path.package_path("kong")
+  curpath =string.gsub(curpath,"kong.lua","kong").."/plugins/"
+
+  local cmd= io.popen("sh "..curpath.."tool/bin/run.sh usertoken -pu "..publickey.." -pr "..privatekey.." -v "..version.." -m "..magiccode.." -t "..token)
   local result=cmd:read("*all")
+  cmd:close()
   local data,err = cjson.decode(result)
   if err then
      return false, {status = 401, message = "unknown token ,cann't decode it !"}

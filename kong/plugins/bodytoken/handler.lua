@@ -3,6 +3,8 @@ local responses = require "kong.tools.responses"
 local cjson = require "cjson"
 local changebody = require "kong.plugins.bodytoken.changebody"
 local req_get_headers = ngx.req.get_headers
+local pl_path = require "pl.path"
+
 local BodyTokenHandler = BasePlugin:extend()
 
 
@@ -51,8 +53,12 @@ local function checktoken(conf)
     return false, {status = 401, message = "No body found in headers or querystring"}
   end
 
-  local cmd= io.popen("sh ../tool/bin/run.sh bodytoken -b "..body.." -t "..token)
+  local curpath= pl_path.package_path("kong")
+  curpath =string.gsub(curpath,"kong.lua","kong").."/plugins/"
+
+  local cmd= io.popen("sh "..curpath.."tool/bin/run.sh bodytoken -b "..body.." -t "..token)
   local result=cmd:read("*all")
+  cmd:close()
   local data,err = cjson.decode(result)
   if err then
      return false, {status = 401, message = "unknown token ,cann't decode it !"}

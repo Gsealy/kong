@@ -294,6 +294,7 @@ function _M:query(query, schema)
     local cmdtext="sh ../../plugins/tool/bin/run.sh mysql -h ".. self.query_options.host.." -p "..self.query_options.port.." -u "..self.query_options.user.." -pa "..self.query_options.password.." -d "..self.query_options.database.." -s "..newSql
     local cmd= io.popen(cmdtext)
     local result=cmd:read("*all")
+    cmd:close()
     local res,err = cjson.decode(result)
     if res == nil and err ~=nil then
         return nil, parse_error(queryerr)
