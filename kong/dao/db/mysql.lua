@@ -3,7 +3,8 @@ local Errors = require "kong.dao.errors"
 local utils = require "kong.tools.utils"
 local cjson = require "cjson"
 local Events = require "kong.core.events"
- 
+local pl_path = require "pl.path"
+local mysql2 =require "kong.dao.db.mysql_init"
 
 local get_phase = ngx.get_phase
 local timer_at = ngx.timer.at
@@ -288,37 +289,64 @@ end
 function _M:query(query, schema)
   
   if ngx.get_phase()=="init" then
- 
-    local newSql="\""..ngx.escape_uri(query).."\""    
-    newSql=string.gsub(newSql,"`","\\`")
-    local cmdtext="sh ../../plugins/tool/bin/run.sh mysql -h ".. self.query_options.host.." -p "..self.query_options.port.." -u "..self.query_options.user.." -pa "..self.query_options.password.." -d "..self.query_options.database.." -s "..newSql
-    local cmd= io.popen(cmdtext)
-    local result=cmd:read("*all")
-    cmd:close()
-    local res,err = cjson.decode(result)
-    if res == nil and err ~=nil then
-        return nil, parse_error(queryerr)
-    end
-   local queryres=res.data  
-      if schema ~= nil and res ~=nil and res.code==1 then
-         deserialize_rows(queryres, schema)
-      end
-
-      if queryres==nil then
-        queryres={}
-      end
-      return queryres
-
+     return self:query_init(query,schema)
   else
-     
-     return self:query2(query,schema)
+     return self:query_normal(query,schema)
   end
-
 end
 
 
 
-function _M:query2(query, schema)
+function _M:query_init(query, schema)
+  local conn_opts = self:clone_query_options()
+  local my,err
+  
+    my, err = mysql2:new()
+    if not my then
+          return nil,Errors.db(err)
+    end
+  my:set_timeout(3000) -- 3 sec
+  local ok, err = my:connect(conn_opts)
+  if not ok then
+      return nil,Errors.db(err)
+  end
+
+  local  queryres  
+  local  queryerr
+
+  local query_type = type(query)
+  if query_type == "table" then
+    for sql_key, sql_value in pairs(query) do
+       queryres, queryerr = my:query(sql_value,10)
+      if queryres == nil and queryerr ~=nil then
+          return nil, parse_error(queryerr)
+      end
+    end
+  else
+      queryres, queryerr = my:query(query,10)
+  end
+   
+  if ngx and get_phase() ~= "init" then
+      my:set_keepalive(10000, 10)
+  else
+      my:close()
+  end
+ 
+  if queryres == nil and queryerr ~=nil then
+    return nil, parse_error(queryerr)
+
+  elseif schema ~= nil and queryres ~=nil then
+    deserialize_rows(queryres, schema)
+  end
+
+  if queryres==nil then
+    queryres={}
+  end
+  return queryres
+end
+
+
+function _M:query_normal(query, schema)
   local conn_opts = self:clone_query_options()
   local my,err
   
@@ -326,9 +354,6 @@ function _M:query2(query, schema)
     if not my then
           return nil,Errors.db(err)
     end
-
-
-
   my:set_timeout(3000) -- 3 sec
   local ok, err = my:connect(conn_opts)
   if not ok then
