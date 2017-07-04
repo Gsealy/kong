@@ -3,7 +3,8 @@
 
 local bit = require "bit"
 local sub = string.sub
-local tcp = require "kong.dao.db.socket"
+local tcp = require "kong.tools.socket"
+local tcp2 = ngx.socket.tcp
 local strbyte = string.byte
 local strchar = string.char
 local strfind = string.find
@@ -516,7 +517,13 @@ end
 
 
 function _M.new(self)
-    local sock, err = tcp.tcp()
+    local sock,err
+
+     if (ngx.get_phase()=="init") then
+       sock, err = tcp.tcp()
+     else
+       sock, err = tcp2()
+     end
     if not sock then
         return nil, err
     end

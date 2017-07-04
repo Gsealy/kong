@@ -1,10 +1,7 @@
-local mysql = require "resty.mysql"
+local mysql = require "kong.tools.mysql"
 local Errors = require "kong.dao.errors"
 local utils = require "kong.tools.utils"
 local cjson = require "cjson"
-local Events = require "kong.core.events"
-local pl_path = require "pl.path"
-local mysql2 =require "kong.dao.db.mysql_init"
 
 local get_phase = ngx.get_phase
 local timer_at = ngx.timer.at
@@ -286,67 +283,8 @@ local function deserialize_rows(rows, schema)
   end
 end
 
+
 function _M:query(query, schema)
-  
-  if ngx.get_phase()=="init" then
-     return self:query_init(query,schema)
-  else
-     return self:query_normal(query,schema)
-  end
-end
-
-
-
-function _M:query_init(query, schema)
-  local conn_opts = self:clone_query_options()
-  local my,err
-  
-    my, err = mysql2:new()
-    if not my then
-          return nil,Errors.db(err)
-    end
-  my:set_timeout(3000) -- 3 sec
-  local ok, err = my:connect(conn_opts)
-  if not ok then
-      return nil,Errors.db(err)
-  end
-
-  local  queryres  
-  local  queryerr
-
-  local query_type = type(query)
-  if query_type == "table" then
-    for sql_key, sql_value in pairs(query) do
-       queryres, queryerr = my:query(sql_value,10)
-      if queryres == nil and queryerr ~=nil then
-          return nil, parse_error(queryerr)
-      end
-    end
-  else
-      queryres, queryerr = my:query(query,10)
-  end
-   
-  if ngx and get_phase() ~= "init" then
-      my:set_keepalive(10000, 10)
-  else
-      my:close()
-  end
- 
-  if queryres == nil and queryerr ~=nil then
-    return nil, parse_error(queryerr)
-
-  elseif schema ~= nil and queryres ~=nil then
-    deserialize_rows(queryres, schema)
-  end
-
-  if queryres==nil then
-    queryres={}
-  end
-  return queryres
-end
-
-
-function _M:query_normal(query, schema)
   local conn_opts = self:clone_query_options()
   local my,err
   
@@ -482,25 +420,16 @@ function _M:find(table_name, schema, primary_keys)
 end
 
 function _M:find_all(table_name, tbl, schema)
-   --if ngx and ngx.get_phase() ~= "init" then
    local where
     if tbl then
       where = get_where(tbl)
     end
-
     local query = select_query(self, get_select_fields(schema), schema, table_name, where)
-  
-
     if query ~=nil then
-      local res =self:query(query,schema) 
-      -- return self:query(query, schema)
-      return res
-  --else
-    --   return {}
-   -- end
-  else
-    return {}
-  end 
+      return   self:query(query,schema) 
+    else
+     return {}
+    end 
 end
 
 function _M:find_page(table_name, tbl, page, page_size, schema)
@@ -618,9 +547,7 @@ function _M:truncate_table(table_name)
 end
 
 function _M:current_migrations()
-   -- if ngx and get_phase() ~= "init" then
 
-    --   check if schema_migrations table exists
  
       local conn_opts =  self.query_options 
       local querysql= fmt( "select table_name as to_regclass from `information_schema`.TABLES where table_schema='%s' and table_name='schema_migrations'",conn_opts.database )
@@ -629,16 +556,11 @@ function _M:current_migrations()
         return nil, err
       end
 
-
-
       if #rows > 0 and rows[1].to_regclass == "schema_migrations" then
         return self:query "SELECT * FROM schema_migrations"
       else
         return {}
       end
-   -- else
-     -- return {}
-    --end
 end
 
 function _M:record_migration(id, name)
