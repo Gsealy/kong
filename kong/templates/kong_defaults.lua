@@ -1,6 +1,10 @@
 return [[
 prefix = /usr/local/kong/
 log_level = notice
+proxy_access_log = logs/access.log
+proxy_error_log = logs/error.log
+admin_access_log = logs/admin_access.log
+admin_error_log = logs/error.log
 custom_plugins = NONE
 anonymous_reports = on
 
@@ -15,10 +19,17 @@ mem_cache_size = 128m
 ssl = on
 ssl_cert = NONE
 ssl_cert_key = NONE
+client_ssl = off
+client_ssl_cert = NONE
+client_ssl_cert_key = NONE
+ssl_cipher_suite = modern
+ssl_ciphers = ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256
 admin_ssl = on
 admin_ssl_cert = NONE
 admin_ssl_cert_key = NONE
 upstream_keepalive = 60
+server_tokens = on
+latency_tokens = on
 
 database = mysql
 
@@ -49,6 +60,7 @@ cassandra_local_datacenter = NONE
 cassandra_repl_strategy = SimpleStrategy
 cassandra_repl_factor = 1
 cassandra_data_centers = dc1:2,dc2:3
+cassandra_schema_consensus_timeout = 10000
 
 cluster_listen = 0.0.0.0:7946
 cluster_listen_rpc = 127.0.0.1:7373

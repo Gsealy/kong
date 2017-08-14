@@ -24,7 +24,7 @@ local function execute(args)
     log("Kong started")
   end, function(e)
     err = e -- cannot throw from this function
-  end
+  end)
 
   if err then
     log.verbose("could not start Kong, stopping services")

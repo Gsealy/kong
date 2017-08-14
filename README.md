@@ -36,8 +36,7 @@ freenode: [#kong](http://webchat.freenode.net/?channels=kong)
 
 ## Features
 
-- Database support:  Mysql,Postgresql,Cassandra.
-- CLI**: Control your Kong cluster from the command line just like Neo in The
+- **CLI**: Control your Kong cluster from the command line just like Neo in The
   Matrix.
 - **REST API**: Kong can be operated with its RESTful API for maximum
   flexibility.
@@ -273,15 +272,15 @@ $ make lint
 
 When developing, you can use the `Makefile` for doing the following operations:
 
-|               Name | Description                              |
-| -----------------: | ---------------------------------------- |
-|          `install` | Install the Kong luarock globally        |
-|              `dev` | Install development dependencies         |
-|             `lint` | Lint Lua files in `kong/` and `spec/`    |
-|             `test` | Run the unit tests suite                 |
-| `test-integration` | Run the integration tests suite          |
-|     `test-plugins` | Run the plugins test suite               |
-|         `test-all` | Run all unit + integration tests at once |
+| Name               | Description                                            |
+| ------------------:| -------------------------------------------------------|
+| `install`          | Install the Kong luarock globally                      |
+| `dev`              | Install development dependencies                       |
+| `lint`             | Lint Lua files in `kong/` and `spec/`                  |
+| `test`             | Run the unit tests suite                               |
+| `test-integration` | Run the integration tests suite                        |
+| `test-plugins`     | Run the plugins test suite                             |
+| `test-all`         | Run all unit + integration tests at once               |
 
 ## Enterprise Support & Demo
 
