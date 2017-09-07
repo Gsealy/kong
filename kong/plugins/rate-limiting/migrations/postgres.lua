@@ -59,8 +59,12 @@ return {
             month = rate_limiting.config.month,
             year = rate_limiting.config.year,
             limit_by = "consumer",
-            policy = "cluster",
-            fault_tolerant = rate_limiting.config.continue_on_error
+            policy = rate_limiting.config.policy,
+            redis_database=rate_limiting.config.redis_database,
+            redis_port =rate_limiting.config.redis_port,
+            redis_timeout = rate_limiting.config.redis_timeout,
+            redis_host =rate_limiting.config.redis_host,
+            fault_tolerant = rate_limiting.config.fault_tolerant
           }
         }
         if err then return err end
