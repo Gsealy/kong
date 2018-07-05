@@ -200,8 +200,8 @@ local get_balancer = function(target)
 
     -- compare balancer history with db-loaded history
     local last_equal_index = 0  -- last index where history is the same
-    for i, entry in ipairs(balancer.__targets_history) do
-      if entry.order ~= (targets_history[i] or EMPTY_T).order then
+    for i, entry in ipairs(targets_history) do
+      if entry.order ~= (balancer.__targets_history[i] or EMPTY_T).order then
         last_equal_index = i - 1
         break
       end
